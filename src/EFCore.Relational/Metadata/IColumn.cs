@@ -98,8 +98,7 @@ public interface IColumn : IColumnBase
                 continue;
             }
 
-            var converter = property.GetValueConverter() ?? PropertyMappings.First().TypeMapping.Converter;
-
+            var converter = property.GetValueConverter() ?? mapping.TypeMapping.Converter;
             if (converter != null)
             {
                 defaultValue = converter.ConvertToProvider(defaultValue);
@@ -147,6 +146,24 @@ public interface IColumn : IColumnBase
     public virtual string? Collation
         => PropertyMappings.First().Property
             .GetCollation(StoreObjectIdentifier.Table(Table.Name, Table.Schema));
+
+    /// <summary>
+    ///     Returns the property from the given entity type that is mapped to this column.
+    /// </summary>
+    /// <param name="entityType"> An entity type. </param>
+    /// <returns> The property or <see langword="null"/> if not found. </returns>
+    public virtual IProperty? FindMappedProperty(IReadOnlyEntityType entityType)
+    {
+        foreach (var mapping in PropertyMappings)
+        {
+            if (mapping.Property.DeclaringEntityType.IsAssignableFrom(entityType))
+            {
+                return mapping.Property;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     ///     <para>

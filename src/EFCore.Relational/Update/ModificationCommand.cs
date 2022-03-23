@@ -34,6 +34,7 @@ public class ModificationCommand : IModificationCommand
     /// <param name="modificationCommandParameters">Creation parameters.</param>
     public ModificationCommand(in ModificationCommandParameters modificationCommandParameters)
     {
+        Table = modificationCommandParameters.Table;
         TableName = modificationCommandParameters.TableName;
         Schema = modificationCommandParameters.Schema;
         _generateParameterName = modificationCommandParameters.GenerateParameterName;
@@ -42,30 +43,36 @@ public class ModificationCommand : IModificationCommand
         _logger = modificationCommandParameters.Logger;
     }
 
-    /// <summary>
-    ///     The name of the table containing the data to be modified.
-    /// </summary>
+    /// <inheritdoc />
+    public virtual ITable? Table { get; }
+
+    /// <inheritdoc />
     public virtual string TableName { get; }
 
-    /// <summary>
-    ///     The schema containing the table, or <see langword="null" /> to use the default schema.
-    /// </summary>
+    /// <inheritdoc />
     public virtual string? Schema { get; }
 
-    /// <summary>
-    ///     The <see cref="IUpdateEntry" />s that represent the entities that are mapped to the row
-    ///     to update.
-    /// </summary>
+    /// <inheritdoc />
     public virtual IReadOnlyList<IUpdateEntry> Entries
         => _entries;
 
-    /// <summary>
-    ///     The <see cref="EntityFrameworkCore.EntityState" /> that indicates whether the row will be
-    ///     inserted (<see cref="Microsoft.EntityFrameworkCore.EntityState.Added" />),
-    ///     updated (<see cref="Microsoft.EntityFrameworkCore.EntityState.Modified" />),
-    ///     or deleted ((<see cref="Microsoft.EntityFrameworkCore.EntityState.Deleted" />).
-    /// </summary>
+    /// <inheritdoc />
     public virtual EntityState EntityState { get; private set; } = EntityState.Modified;
+
+    /// <summary>
+    ///     Indicates whether the database will return values for some mapped properties
+    ///     that will then need to be propagated back to the tracked entities.
+    /// </summary>
+    public virtual bool RequiresResultPropagation
+    {
+        get
+        {
+            // ReSharper disable once AssignmentIsFullyDiscarded
+            _ = ColumnModifications;
+
+            return _requiresResultPropagation;
+        }
+    }
 
     /// <summary>
     ///     The list of <see cref="IColumnModification" /> needed to perform the insert, update, or delete.
@@ -90,27 +97,7 @@ public class ModificationCommand : IModificationCommand
         }
     }
 
-    /// <summary>
-    ///     Indicates whether the database will return values for some mapped properties
-    ///     that will then need to be propagated back to the tracked entities.
-    /// </summary>
-    public virtual bool RequiresResultPropagation
-    {
-        get
-        {
-            // ReSharper disable once AssignmentIsFullyDiscarded
-            _ = ColumnModifications;
-
-            return _requiresResultPropagation;
-        }
-    }
-
-    /// <summary>
-    ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-    ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-    ///     any release. You should only use it directly in your code with extreme caution and knowing that
-    ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-    /// </summary>
+    /// <inheritdoc />
     public virtual void AddEntry(IUpdateEntry entry, bool mainEntry)
     {
         AssertColumnsNotInitialized();
